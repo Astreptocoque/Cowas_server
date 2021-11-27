@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}Led control{% endblock %}
+
+{% block content %}
+<p>Led toggle</p>
+
+<form method="post" action ="">
+
+    <input type="submit" name="Led_toggle" value="pressed" />
+    <!-- <button name="Led_toggle" type="submit">Toggle</button> -->
+    <p>{{message}}</p>
+</form>
+{% endblock %}
