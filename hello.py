@@ -1,21 +1,21 @@
-from os import truncate
-from flask import Flask, sessions
+from flask import Flask
 from markupsafe import escape #protection contre des attaques
 from flask import url_for
 from flask import request
-from flask import Response
 from flask import render_template
 from werkzeug.utils import redirect
 from flask import session
-
 from datetime import timedelta
 
 app = Flask(__name__)
 
-app.secret_key = Flask.secret_key
+app.secret_key = "7,1Iaz{eaW3(Nux9?;>qPAm]O]s5vB"
 app.permanent_session_lifetime = timedelta(minutes=10)
 
+# ===== VARIABLES =======
 led_state = None
+logged_IP_adress = None
+
 
 @app.before_request
 def before_request():
@@ -40,6 +40,14 @@ def get_led_state():
 
 @app.route('/login/', methods=['GET','POST'])
 def login():
+    global logged_IP_adress
+
+    remote_IP = request.remote_addr
+    print("remote IP")
+    print(remote_IP)
+    print("stored IP")
+    print(logged_IP_adress)
+
     if request.method == "POST":
         username = request.form.get('username')
         password = request.form.get('password')
@@ -48,69 +56,63 @@ def login():
         if username == "Tim" and password == "cowas":
             session.permanent = True
             session["user"] = username
+            logged_IP_adress = remote_IP
             return redirect(url_for("home"))
         else:
             return render_template("login.html", message = "Wrong credentials")
     # GET request
     else:
-        if "user" in session:
+        # if nobody is connected
+        if logged_IP_adress == None:
+            return render_template("login.html")
+        # if already connected
+        elif logged_IP_adress == remote_IP:
+            # if "user" in session:
             return redirect(url_for("home"))
-        return render_template("login.html")    
+            # return render_template("login.html")   
+        # if someone else already connected
+        else:
+            return render_template("home.html", message = "Someone is already connected. Please wait.")
 	    
 
 @app.route("/led/", methods=['GET','POST'])
 def led_control():
-    global led_state
-    if "user" in session:
+    global led_state, logged_IP_adress
 
-        if request.method == "POST":
-            if request.form.get("On") == 'On':
-                print("ON selected")
-                led_state = 1
-                print(led_state)
-                message = "On selected"
-            elif request.form.get("Off") == 'Off':
-                print("Off selected")
-                led_state = 0
-                print(led_state)
-                message = "OFF selected"
-            else:
-                pass
+    if logged_IP_adress == request.remote_addr:
+        if "user" in session:
 
-        # GET request
-        elif request.method == "GET":
-            message = "Choose an action"
-        return render_template("Led_control.html", message=message)
+            if request.method == "POST":
+                if request.form.get("On") == 'On':
+                    print("ON selected")
+                    led_state = 1
+                    print(led_state)
+                    message = "On selected"
+                elif request.form.get("Off") == 'Off':
+                    print("Off selected")
+                    led_state = 0
+                    print(led_state)
+                    message = "OFF selected"
+                else:
+                    pass
+
+            # GET request
+            elif request.method == "GET":
+                message = "Choose an action"
+            return render_template("Led_control.html", message=message)
+        else:
+            return redirect(url_for("login"))
     else:
-        return redirect(url_for("login"))
-
-# ###############################################
-# #          Render monitoring page              #
-# ###############################################
-# @app.route('/monitoring', methods=["GET", "POST"])
-# def monitoring():
-#     if "user" in session:
-#         return render_template("Monitoring.html")
-#     else:
-#         redirect(url_for("login"))
-
-# ###############################################
-# #          Render control page              #
-# ###############################################
-# @app.route('/control', methods=["GET", "POST"])
-# def control():
-#     if "user" in session:
-#         return render_template("Control.html")
-#     else:
-#         redirect(url_for("login"))
-
-
-# @app.route("/<usr>")
-# def user(usr):
-#     return f"<h1>{usr}</h1>"
+        return render_template("home.html", message = "Someone is already connected. Please wait.")
 
 @app.route('/logout')
 def logout():
-    # remove the username from the session if it's there
-    session.pop('user', None)
-    return redirect(url_for('login'))
+    global logged_IP_adress
+
+    if logged_IP_adress == request.remote_addr:
+        # remove the username from the session if it's there
+        session.pop('user', None)
+        logged_IP_adress = None
+        return redirect(url_for('login'))
+    else:
+        return render_template("home.html", message = "Someone is already connected. Please wait.")
