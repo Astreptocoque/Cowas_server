@@ -7,80 +7,110 @@ from flask import Response
 from flask import render_template
 from werkzeug.utils import redirect
 from flask import session
-from datetime import timedelta
 
-# https://flask.palletsprojects.com/en/2.0.x/quickstart/
+from datetime import timedelta
 
 app = Flask(__name__)
 
-app.secret_key = b'_5#y2L"F4Q8z\n\xec]/'
+app.secret_key = Flask.secret_key
+app.permanent_session_lifetime = timedelta(minutes=10)
+
+led_state = None
 
 @app.before_request
 def before_request():
+    global led_state
+    # led_state = 0
     print("initiate")
-    # g.led_state = 1 #global variable
 
 @app.route("/")
-def home():
-    return render_template("index.html")
+def root():
+    return redirect(url_for("home"))
 
-@app.route("/led_state/<int:led_state>")
-def led_toggle(led_state):
-    return f'Led {escape(led_state)}'
+@app.route("/home/")
+def home():
+    return render_template("home.html")
+
+@app.route("/control/")
+def get_led_state():
+    global led_state
+    led_state_p = request.args.get("querry")
+    if led_state_p == "led":
+        return f'{escape(led_state)}'
 
 @app.route('/login/', methods=['GET','POST'])
 def login():
     if request.method == "POST":
         username = request.form.get('username')
         password = request.form.get('password')
-        
-        session.permanent = True
-        session["user"] = username
-
+    
         # If correct, go to LED control page, otherwise redo
         if username == "Tim" and password == "cowas":
-            return redirect(url_for("led_control"))
+            session.permanent = True
+            session["user"] = username
+            return redirect(url_for("home"))
         else:
             return render_template("login.html", message = "Wrong credentials")
     # GET request
     else:
-        if "username" in session:
-            return redirect(url_for("led_control"))
-        else:
-            pass    
-	    return render_template("login.html")
+        if "user" in session:
+            return redirect(url_for("home"))
+        return render_template("login.html")    
+	    
 
 @app.route("/led/", methods=['GET','POST'])
 def led_control():
-
+    global led_state
     if "user" in session:
 
         if request.method == "POST":
-            if request.form.get("Led_toggle") == 'pressed':
-                # if(g.led_state == 0):
-                #     message = "LED is ON"
-                #     g.led_state = 1
-                #     print("LED 1")
-                # else:
-                #     message = "LED is OFF"
-                #     g.led_state = 0
-                #     print("LED 0")
-                #     print(g.led_state)
+            if request.form.get("On") == 'On':
+                print("ON selected")
+                led_state = 1
+                print(led_state)
+                message = "On selected"
+            elif request.form.get("Off") == 'Off':
+                print("Off selected")
+                led_state = 0
+                print(led_state)
+                message = "OFF selected"
+            else:
                 pass
+
         # GET request
         elif request.method == "GET":
-            return render_template("Led_control.html")
-        return render_template("Led_control.html", message="message")
-    
+            message = "Choose an action"
+        return render_template("Led_control.html", message=message)
     else:
-        redirect(url_for("login"))
+        return redirect(url_for("login"))
 
-@app.route("/<usr>")
-def user(usr):
-    return f"<h1>{usr}</h1>"
+# ###############################################
+# #          Render monitoring page              #
+# ###############################################
+# @app.route('/monitoring', methods=["GET", "POST"])
+# def monitoring():
+#     if "user" in session:
+#         return render_template("Monitoring.html")
+#     else:
+#         redirect(url_for("login"))
+
+# ###############################################
+# #          Render control page              #
+# ###############################################
+# @app.route('/control', methods=["GET", "POST"])
+# def control():
+#     if "user" in session:
+#         return render_template("Control.html")
+#     else:
+#         redirect(url_for("login"))
+
+
+# @app.route("/<usr>")
+# def user(usr):
+#     return f"<h1>{usr}</h1>"
 
 @app.route('/logout')
 def logout():
     # remove the username from the session if it's there
-    session.pop('username', None)
-    return redirect(url_for('index'))
+    session.pop('user', None)
+    return redirect(url_for('login'))
