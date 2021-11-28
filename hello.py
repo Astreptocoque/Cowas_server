@@ -15,6 +15,7 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 
 # ===== VARIABLES =======
 led_state = None
+button_state = None
 
 @app.before_request
 def before_request():
@@ -36,6 +37,25 @@ def get_led_state():
     led_state_p = request.args.get("query")
     if led_state_p == "led":
         return f'{escape(led_state)}'
+
+# receive information from Arduino board
+@app.route("/update", methods=["POST"])
+def update():
+    global button_state
+    button_state = request.args.get("button_state")
+    print(button_state)
+    return f'{escape("button updated")}'
+
+# monitor information from Arduino board
+@app.route("/monitor/", methods=["GET","POST"])
+def monitor():
+    global button_state
+    # print(button_state)
+    if request.method == "POST":
+        return render_template("monitor.html", message = button_state)
+    else:
+        return render_template("monitor.html", message = button_state)
+
 
 # Login to control Arduino board
 @app.route('/login/', methods=['GET','POST'])
