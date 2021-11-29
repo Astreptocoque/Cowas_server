@@ -84,29 +84,37 @@ def login():
 def led_control():
     global led_state
 
-    if request.method == "POST":
-        if request.form.get("On") == 'On':
-            print("ON selected")
-            led_state = 1
-            print(led_state)
-            message = "On selected"
-        elif request.form.get("Off") == 'Off':
-            print("Off selected")
-            led_state = 0
-            print(led_state)
-            message = "OFF selected"
-        else:
-            pass
+    if "user" in session:
 
-    # GET request
-    elif request.method == "GET":
-        message = "Choose an action"
-    return render_template("Led_control.html", message=message)
+        if request.method == "POST":
+            if request.form.get("On") == 'On':
+                print("ON selected")
+                led_state = 1
+                print(led_state)
+                message = "On selected"
+            elif request.form.get("Off") == 'Off':
+                print("Off selected")
+                led_state = 0
+                print(led_state)
+                message = "OFF selected"
+            else:
+                pass
+
+        # GET request
+        elif request.method == "GET":
+            message = "Choose an action"
+        return render_template("Led_control.html", message=message)
+    
+    else:
+        return redirect(url_for("login"))
 
 
 @app.route('/logout')
 def logout():
 
-    session.pop('user', None)
-    logged_IP_adress = None
-    return redirect(url_for('login'))
+    if "user" in session:
+        session.pop('user', None)
+        logged_IP_adress = None
+        return redirect(url_for('login'))
+    else:
+        return redirect(url_for("login"))
