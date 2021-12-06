@@ -42,8 +42,11 @@ def get_led_state():
 @app.route("/update", methods=["POST"])
 def update():
     global button_state
-    button_state = request.args.get("button_state")
-    print(button_state)
+    # button_state = request.args.get("button_state")
+    content = request.get_json()
+    print(content)
+    button_state = content["value"]
+
     return f'{escape("button updated")}'
 
 # monitor information from Arduino board
