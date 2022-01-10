@@ -16,6 +16,11 @@ app.permanent_session_lifetime = timedelta(minutes=10)
 led_state = None
 logged_IP_adress = None
 
+class sample:
+    def __init__(self, _datem, _frequency, _depth):
+        self.datem = _datem
+        self.frequency = _frequency
+        self.depth = _depth
 
 @app.before_request
 def before_request():

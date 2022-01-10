@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Login Page{% endblock %}
+
+{% block content %}
+<form action="#" method="post">
+    <div>
+	<p>Username</p>
+	<input type="date" name="date"/>
+    <br>
+    <br>
+    <p>Frequency</p>
+        <select id="frequency" name="frequency">
+            <option value="0">No repetition</option>
+            <option value="1">1 day</option>
+            <option value="2">2 day</option>
+            <option value="3">3 day</option>
+            <option value="4">4 day</option>
+            <option value="5">5 day</option>
+            <option value="6">6 day</option>
+            <option value="7">7 day</option>
+        </select>
+    <br>
+    <br>
+    <p>Depth (in centimeters)</p>
+    <p><input type="text" name="depth"/></p>
+    <br>
+    <p>{{message}}</p>
+    <br>
+	<p><input type="submit" value="submit"/></p>
+    </div>
+</form>
+{% endblock %}

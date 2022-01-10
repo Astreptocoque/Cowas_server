@@ -5,17 +5,27 @@ from flask import request
 from flask import render_template
 from werkzeug.utils import redirect
 from flask import session
-from datetime import timedelta
+from datetime import timedelta, datetime
+from flask import jsonify
+import copy
 
 app = Flask(__name__)
 
-# warning session is stored on client browser. Server cannot logout user.
+# THIS IS NOT SECURED AT ALL
 app.secret_key = "7,1Iaz{eaW3(Nux9?;>qPAm]O]s5vB"
 app.permanent_session_lifetime = timedelta(minutes=10)
 
 # ===== VARIABLES =======
 led_state = None
 button_state = None
+
+class Sample:
+    def __init__(self, _datem, _frequency, _depth):
+        self.datem = _datem
+        self.frequency = _frequency
+        self.depth = _depth
+
+sample = Sample(datetime(1970, 1, 1), 0, 0)
 
 @app.before_request
 def before_request():
@@ -30,13 +40,44 @@ def root():
 def home():
     return render_template("home.html")
 
-# get LED state to update Arduino board
-@app.route("/control/")
-def get_led_state():
-    global led_state
-    led_state_p = request.args.get("query")
-    if led_state_p == "led":
-        return f'{escape(led_state)}'
+@app.route("/samples/")
+def get_sample():
+    global sample
+    sample_p = request.args.get("querry")
+    #if sample_p == "led"
+    sample2 = copy.deepcopy(sample)
+    sample = Sample(datetime(1970, 1, 1), 0, 0)
+    return jsonify(year=sample2.datem.year,
+        month= sample2.datem.month,
+        day= sample2.datem.day,
+        hour= sample2.datem.hour,
+        minute= sample2.datem.minute,
+        frequency= sample2.frequency,
+        depth= sample2.depth)
+
+# set samples
+@app.route("/samples/create", methods=['GET', 'POST'])
+def set_sample():
+    global sample
+    if request.method == "POST":
+        datem = datetime.strptime(request.form.get('date'), '%Y-%m-%d')
+        print(datem)
+        frequency = int(request.form.get('frequency'))
+        depth = int(request.form.get('depth'))
+
+        if depth <= 0 and depth > 40000:
+            return render_template("New_sample.html", message = "Depth invalid")
+        else:
+            sample.datem = datem
+            sample.frequency = frequency
+            sample.depth = depth
+            return render_template("New_sample.html", message = "ENJOY !")
+    # GET request
+    else:
+        if "user" in session:
+            return render_template("New_sample.html")
+        else:
+            return render_template("login.html")
 
 # receive information from Arduino board
 @app.route("/update", methods=["POST"])
