@@ -1,3 +1,6 @@
+# TEST to allow only one user at a time. Do not work very well.
+# Not up-to-date anymore
+
 from flask import Flask
 from markupsafe import escape #protection contre des attaques
 from flask import url_for
